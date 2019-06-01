@@ -106,7 +106,27 @@ impl Session {
     pub fn write_message(&mut self, payload: &[u8], output: &mut [u8]) -> Result<usize, Error> {
         match *self {
             Session::Handshake(ref mut state) => state.write_handshake_message(payload, output),
-            Session::Transport(ref mut state) => state.write_transport_message(payload, output),
+            Session::Transport(ref mut state) => state.write_transport_message(&[0u8;0], payload, output),
+            Session::StatelessTransport(_)    => bail!(StateProblem::StatelessTransportMode),
+        }
+    }
+
+    /// Construct a message from `payload` with an associated data `authtext`, and writes it to the
+    /// `output` buffer.
+    ///
+    /// Returns the size of the written payload.
+    ///
+    /// # Errors
+    ///
+    /// Will result in `Error::StateProblem` if not in transport mode.
+    ///
+    /// Will result in `Error::Input` if the size of the output exceeds the max message
+    /// length in the Noise Protocol (65535 bytes).
+    #[must_use]
+    pub fn write_message_with_ad(&mut self, authtext: &[u8], payload: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+        match *self {
+            Session::Handshake(_) => bail!(StateProblem::HandshakeNotFinished),
+            Session::Transport(ref mut state) => state.write_transport_message(authtext, payload, output),
             Session::StatelessTransport(_)    => bail!(StateProblem::StatelessTransportMode),
         }
     }
@@ -124,8 +144,23 @@ impl Session {
     /// Will result in `Error::StateProblem` if not in stateless transport mode.
     #[must_use]
     pub fn write_message_with_nonce(&self, nonce: u64, payload: &[u8], output: &mut [u8]) -> Result<usize, Error> {
+        self.write_message_with_nonce_ad(nonce, &[0u8;0], payload, output)
+    }
+
+    /// Construct a message from `payload` with an explicitly provided nonce and associated data
+    /// `authtext`, and write it to the `output` buffer.
+    ///
+    /// Returns the size of the written payload.
+    ///
+    /// # Errors
+    ///
+    /// Will result in `Error::Input` if the size of the output exceeds the max message
+    /// length in the Noise Protocol (65535 bytes).
+    ///
+    /// Will result in `Error::StateProblem` if not in stateless transport mode.
+    pub fn write_message_with_nonce_ad(&self, nonce: u64, authtext: &[u8], payload: &[u8], output: &mut [u8]) -> Result<usize, Error> {
         match *self {
-            Session::StatelessTransport(ref state) => state.write_transport_message(nonce, payload, output),
+            Session::StatelessTransport(ref state) => state.write_transport_message(nonce, authtext, payload, output),
             _                                      => bail!(StateProblem::StatelessTransportMode),
         }
     }
@@ -146,13 +181,36 @@ impl Session {
     pub fn read_message(&mut self, input: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
         match *self {
             Session::Handshake(ref mut state) => state.read_handshake_message(input, payload),
-            Session::Transport(ref mut state) => state.read_transport_message(input, payload),
+            Session::Transport(ref mut state) => state.read_transport_message(&[0u8;0], input, payload),
             Session::StatelessTransport(_)    => bail!(StateProblem::StatelessTransportMode),
         }
     }
 
-    /// Construct a message from `payload` (and pending handshake tokens if in handshake state),
-    /// and writes it to the `output` buffer.
+    /// Reads a noise message from `input` with an associated data `authtext`.
+    ///
+    /// Returns the size of the payload written to `payload`.
+    ///
+    /// # Errors
+    ///
+    /// Will result in `Error::Decrypt` if the contents couldn't be decrypted and/or the
+    /// authentication tag didn't verify.
+    ///
+    /// # Panics
+    ///
+    /// Will result in `Error::StateProblem` if not in transport mode.
+    ///
+    /// This function will panic if there is no key, or if there is a nonce overflow.
+    #[must_use]
+    pub fn read_message_with_ad(&mut self, authtext: &[u8], input: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
+        match *self {
+            Session::Handshake(_) => bail!(StateProblem::HandshakeNotFinished),
+            Session::Transport(ref mut state) => state.read_transport_message(authtext, input, payload),
+            Session::StatelessTransport(_)    => bail!(StateProblem::StatelessTransportMode),
+        }
+    }
+
+    /// Construct a message from `payload` with an explicitly provided nonce and writes it to the
+    /// `output` buffer.
     ///
     /// Returns the size of the written payload.
     ///
@@ -164,8 +222,24 @@ impl Session {
     /// Will result in `Error::StateProblem` if not in stateless transport mode.
     #[must_use]
     pub fn read_message_with_nonce(&self, nonce: u64, input: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
+        self.read_message_with_nonce_ad(nonce, &[0u8;0], input, payload)
+    }
+
+    /// Construct a message from `payload` with an associated data `authtext` and writes it to the
+    /// `output` buffer.
+    ///
+    /// Returns the size of the written payload.
+    ///
+    /// # Errors
+    ///
+    /// Will result in `Error::Input` if the size of the output exceeds the max message
+    /// length in the Noise Protocol (65535 bytes).
+    ///
+    /// Will result in `Error::StateProblem` if not in stateless transport mode.
+    #[must_use]
+    pub fn read_message_with_nonce_ad(&self, nonce: u64, authtext: &[u8], input: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
         match *self {
-            Session::StatelessTransport(ref state) => state.read_transport_message(nonce, input, payload),
+            Session::StatelessTransport(ref state) => state.read_transport_message(nonce, authtext, input, payload),
             _                                      => bail!(StateProblem::StatelessTransportMode),
         }
     }

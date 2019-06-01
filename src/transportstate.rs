@@ -43,6 +43,7 @@ impl TransportState {
     }
 
     pub fn write_transport_message(&mut self,
+                                   authtext: &[u8],
                                    payload: &[u8],
                                    message: &mut [u8]) -> Result<usize, Error> {
         if !self.initiator && self.pattern.is_oneway() {
@@ -52,17 +53,18 @@ impl TransportState {
         }
 
         let cipher = if self.initiator { &mut self.cipherstates.0 } else { &mut self.cipherstates.1 };
-        Ok(cipher.encrypt(payload, message)?)
+        Ok(cipher.encrypt_ad(authtext, payload, message)?)
     }
 
     pub fn read_transport_message(&mut self,
-                                   payload: &[u8],
-                                   message: &mut [u8]) -> Result<usize, Error> {
+                                  authtext: &[u8],
+                                  payload: &[u8],
+                                  message: &mut [u8]) -> Result<usize, Error> {
         if self.initiator && self.pattern.is_oneway() {
             bail!(StateProblem::OneWay);
         }
         let cipher = if self.initiator { &mut self.cipherstates.1 } else { &mut self.cipherstates.0 };
-        cipher.decrypt(payload, message).map_err(|_| Error::Decrypt)
+        cipher.decrypt_ad(authtext, payload, message).map_err(|_| Error::Decrypt)
     }
 
     pub fn rekey_outgoing(&mut self) {
