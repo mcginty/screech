@@ -6,6 +6,9 @@ use crate::params::NoiseParams;
 use crate::resolvers::CryptoResolver;
 use crate::error::{Error, InitStage, Prerequisite};
 use subtle::ConstantTimeEq;
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::vec;
 
 /// A keypair object returned by [`Builder::generate_keypair()`]
 ///

@@ -2,8 +2,10 @@
 //! patterns/names)
 
 use crate::error::{Error, PatternProblem};
-use std::str::FromStr;
+use core::str::FromStr;
+use alloc::string::String;
 mod patterns;
+
 
 pub use self::patterns::{
     HandshakeChoice,
@@ -143,7 +145,7 @@ impl FromStr for NoiseParams {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut split = s.split('_');
-        Ok(NoiseParams::new(s.to_owned(),
+        Ok(NoiseParams::new(String::from(s),
                             split.next().ok_or(PatternProblem::TooFewParameters)?.parse()?,
                             split.next().ok_or(PatternProblem::TooFewParameters)?.parse()?,
                             split.next().ok_or(PatternProblem::TooFewParameters)?.parse()?,

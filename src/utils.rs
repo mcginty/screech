@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use core::ops::{Deref, DerefMut};
 
 /// Toggle is similar to Option, except that even in the Off/"None" case, there is still
 /// an owned allocated inner object. This is useful for holding onto pre-allocated objects

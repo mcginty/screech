@@ -16,12 +16,13 @@ edition = "2018"
 # Features with a -resolver suffix simply enables the existence of a specific resolver,
 # and -accelerated suffix means that this resolver will be the default used by the Builder.
 [features]
-default = ["default-resolver"]
+default = ["default-resolver", "std"]
 nightly = ["blake2-rfc/simd_opt", "chacha20-poly1305-aead/simd_opt", "x25519-dalek/nightly", "subtle/nightly"]
-default-resolver = ["chacha20-poly1305-aead", "blake2-rfc", "sha2", "x25519-dalek", "rand"]
-ring-resolver = ["ring"]
-ring-accelerated = ["ring-resolver", "default-resolver"]
+default-resolver = ["chacha20-poly1305-aead", "blake2-rfc", "sha2", "x25519-dalek", "rand", "std"]
+ring-resolver = ["ring", "std"]
+ring-accelerated = ["ring-resolver", "default-resolver", "std"]
 vector-tests = []
+std = ["subtle/std"]
 
 [[bench]]
 name = "benches"
@@ -34,7 +35,7 @@ appveyor = { repository = "mcginty/snow", branch = "master", service = "github" 
 [dependencies]
 arrayref = "0.3.5"
 rand_core = "0.5"
-subtle = "2.1"
+subtle = { version = "2.1", default-features = false}
 
 # default crypto provider
 chacha20-poly1305-aead = { version = "0.1", optional = true }

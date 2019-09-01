@@ -4,7 +4,7 @@ use crate::cipherstate::CipherStates;
 use crate::constants::{MAXDHLEN, MAXMSGLEN, TAGLEN};
 use crate::utils::Toggle;
 use crate::handshakestate::HandshakeState;
-use std::{convert::TryFrom, fmt};
+use core::{convert::TryFrom, fmt};
 
 /// A state machine encompassing the transport phase of a Noise session, using the two
 /// `CipherState`s (for sending and receiving) that were spawned from the `SymmetricState`'s

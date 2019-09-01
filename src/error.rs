@@ -1,6 +1,6 @@
 //! All error types used by Snow operations.
 
-use std::fmt;
+use core::fmt;
 
 /// All errors in snow will include an `ErrorKind`.
 #[allow(missing_docs)]
@@ -126,4 +126,5 @@ impl fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for Error {}

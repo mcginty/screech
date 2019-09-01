@@ -1,6 +1,7 @@
 use crate::constants::TAGLEN;
 use crate::error::{Error, InitStage, StateProblem};
 use crate::types::Cipher;
+use alloc::boxed::Box;
 
 pub(crate) struct CipherState {
     cipher : Box<dyn Cipher>,

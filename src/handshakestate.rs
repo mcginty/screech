@@ -7,7 +7,8 @@ use crate::params::{HandshakeTokens, MessagePatterns, NoiseParams, Token};
 use crate::transportstate::TransportState;
 use crate::stateless_transportstate::StatelessTransportState;
 use crate::error::{Error, InitStage, StateProblem};
-use std::{convert::{TryFrom, TryInto}, fmt};
+use core::{convert::{TryFrom, TryInto}, fmt};
+use alloc::boxed::Box;
 
 /// A state machine encompassing the handshake phase of a Noise session.
 ///

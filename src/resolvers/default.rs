@@ -8,6 +8,8 @@ use x25519_dalek as x25519;
 use crate::types::{Cipher, Dh, Hash, Random};
 use crate::constants::TAGLEN;
 use crate::params::{CipherChoice, DHChoice, HashChoice};
+use alloc::boxed::Box;
+
 use std::io::{Cursor, Write};
 use super::CryptoResolver;
 
@@ -317,6 +319,9 @@ mod tests {
     use super::*;
     use self::hex::FromHex;
 
+    use alloc::{vec::Vec, vec};
+    use alloc::string::String;
+
     #[test]
     fn test_sha256() {
         let mut output = [0u8; 32];
@@ -470,6 +475,6 @@ mod tests {
                                  6d206f74686572207468616e20617320\
                                  2fe2809c776f726b20696e2070726f67\
                                  726573732e2fe2809d";
-        assert!(hex::encode(out[..ciphertext.len()].to_owned()) == desired_plaintext);
+        assert!(String::from(hex::encode(&out[..ciphertext.len()])) == desired_plaintext);
     }
 }

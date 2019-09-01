@@ -1,3 +1,4 @@
+#![no_std]
 //! The `snow` crate is a straightforward, Hard To Fuck Up™ Noise Protocol implementation.
 //!
 //! Read the [Noise Protocol Framework Spec](http://noiseprotocol.org/noise.html) for more
@@ -71,6 +72,11 @@ macro_rules! bail {
         return Err(($e).into());
     };
 }
+extern crate alloc;
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
 
 pub mod error;
 mod utils;

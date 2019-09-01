@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::constants::{CIPHERKEYLEN, MAXHASHLEN};
 use crate::types::Hash;
 use crate::cipherstate::CipherState;
+use alloc::boxed::Box;
 
 #[derive(Copy, Clone)]
 pub(crate) struct SymmetricStateData {
