@@ -25,7 +25,7 @@ libsodium-resolver = ["sodiumoxide", "byteorder"]
 libsodium-accelerated = ["libsodium-resolver", "default-resolver"]
 vector-tests = []
 hfs = []
-pqclean_kyber1024 = ["pqcrypto-kyber", "pqcrypto-traits", "hfs", "default-resolver"]
+nist3_kyber1024 = ["oqs", "hfs", "default-resolver"]
 xchachapoly = ["chacha20poly1305", "default-resolver"]
 risky-raw-split = []
 
@@ -47,8 +47,7 @@ blake2 = { version = "0.9", optional = true }
 rand = { version = "0.8", optional = true }
 sha2 = { version = "0.9", optional = true }
 x25519-dalek = { version = "1.1", optional = true }
-pqcrypto-kyber = { version = "0.6", optional = true }
-pqcrypto-traits = { version = "0.3", optional = true }
+oqs = { git = "https://github.com/open-quantum-safe/liboqs-rust.git", rev = "6653b262d8548a8c93000a5b847b65c9b51e6e78", optional = true, default-features = false }
 
 # ring crypto proivder
 ring = { version = "^0.16.2", optional = true, features = ["std"] }
