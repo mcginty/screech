@@ -18,6 +18,7 @@ use crate::{
 use std::{
     convert::{TryFrom, TryInto},
     fmt,
+    marker::PhantomData,
 };
 
 /// A state machine encompassing the handshake phase of a Noise session.
@@ -45,6 +46,24 @@ pub struct HandshakeState {
     pub(crate) my_turn:          bool,
     pub(crate) message_patterns: MessagePatterns,
     pub(crate) pattern_position: usize,
+}
+
+/// Result of [`simulate_write_message`](HandshakeState::simulate_write_message) if the call was successful.
+pub struct SimulatedWriteInfo {
+    /// Would-be resulting message length of a call to [`write_message`](HandshakeState::write_message)
+    ///
+    /// This is useful to pad the message length to disguise re-handshakes.
+    pub result_length: usize,
+
+    /// Flag that indicates if the contained payload would be encrypted
+    ///
+    /// NOTE: even when the payload would be encrypted, that doesn't necessarily mean that the
+    /// encryption is as strong as the encryption in transport mode.
+    /// See: [Noise Explorer, Patterns](https://noiseexplorer.com/patterns/)
+    pub is_encrypted: bool,
+
+    /// Disallow exhausive matching
+    _non_exhausive: PhantomData<()>,
 }
 
 impl HandshakeState {
@@ -216,6 +235,21 @@ impl HandshakeState {
                 Err(err)
             },
         }
+    }
+
+    /// Simulates a call to [`write_message`](HandshakeState::write_message) and returns
+    /// the result and additional information.
+    pub fn simulate_write_message(&mut self, payload: &[u8]) -> Result<SimulatedWriteInfo, Error> {
+        let mut tmp = [0u8; 65535];
+        let checkpoint = self.symmetricstate.checkpoint();
+        let ret =
+            self._write_message(payload, &mut tmp[..]).map(|result_length| SimulatedWriteInfo {
+                result_length,
+                is_encrypted: self.symmetricstate.has_key(),
+                _non_exhausive: PhantomData,
+            });
+        self.symmetricstate.restore(checkpoint);
+        ret
     }
 
     fn _write_message(&mut self, payload: &[u8], message: &mut [u8]) -> Result<usize, Error> {

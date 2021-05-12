@@ -89,7 +89,7 @@ pub mod types;
 pub use crate::{
     builder::{Builder, Keypair},
     error::Error,
-    handshakestate::HandshakeState,
+    handshakestate::{HandshakeState, SimulatedWriteInfo},
     stateless_transportstate::StatelessTransportState,
     transportstate::TransportState,
 };
