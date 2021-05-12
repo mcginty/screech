@@ -106,13 +106,13 @@ impl SymmetricState {
         Ok(output_len)
     }
 
-    pub fn decrypt_and_mix_hash(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, ()> {
+    pub fn decrypt_and_mix_hash(&mut self, data: &[u8], out: &mut [u8]) -> Result<usize, Error> {
         let hash_len = self.hasher.hash_len();
         let payload_len = if self.inner.has_key {
             self.cipherstate.decrypt_ad(&self.inner.h[..hash_len], data, out)?
         } else {
             if out.len() < data.len() {
-                return Err(());
+                return Err(Error::Decrypt);
             }
             copy_slices!(data, out);
             data.len()

@@ -105,6 +105,8 @@ pub enum StateProblem {
     HandshakeAlreadyFinished,
     OneWay,
     StatelessTransportMode,
+    /// The nonce counter attempted to go higher than (2^64) - 1
+    Exhausted,
 }
 
 impl From<StateProblem> for Error {

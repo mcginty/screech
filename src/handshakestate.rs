@@ -171,7 +171,7 @@ impl HandshakeState {
         if !(dh.is_on() && key.is_on()) {
             bail!(StateProblem::MissingKeyMaterial);
         }
-        dh.dh(&**key, &mut dh_out).map_err(|_| Error::Dh)?;
+        dh.dh(&**key, &mut dh_out)?;
         Ok(dh_out)
     }
 
@@ -329,9 +329,7 @@ impl HandshakeState {
     /// Will result in `Error::Decrypt` if the contents couldn't be decrypted and/or the
     /// authentication tag didn't verify.
     ///
-    /// # Panics
-    ///
-    /// This function will panic if there is no key, or if there is a nonce overflow.
+    /// Will result in `StateProblem::Exhausted` if the max nonce count overflows.
     pub fn read_message(&mut self, message: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
         let checkpoint = self.symmetricstate.checkpoint();
         match self._read_message(message, payload) {
@@ -389,9 +387,7 @@ impl HandshakeState {
                         ptr = &ptr[dh_len..];
                         temp
                     };
-                    self.symmetricstate
-                        .decrypt_and_mix_hash(data, &mut self.rs[..dh_len])
-                        .map_err(|_| Error::Decrypt)?;
+                    self.symmetricstate.decrypt_and_mix_hash(data, &mut self.rs[..dh_len])?;
                     self.rs.enable();
                 },
                 Token::Psk(n) => match self.psks[*n as usize] {
@@ -418,9 +414,7 @@ impl HandshakeState {
                         bail!(Error::Input);
                     }
                     let mut kem_re = [0; MAXKEMPUBLEN];
-                    self.symmetricstate
-                        .decrypt_and_mix_hash(&ptr[..read_len], &mut kem_re[..kem.pub_len()])
-                        .map_err(|_| Error::Decrypt)?;
+                    self.symmetricstate.decrypt_and_mix_hash(&ptr[..read_len], &mut kem_re[..kem.pub_len()])?;
                     self.kem_re = Some(kem_re);
                     ptr = &ptr[read_len..];
                 },
@@ -437,9 +431,7 @@ impl HandshakeState {
                     }
                     let mut ciphertext_buf = [0; MAXKEMCTLEN];
                     let ciphertext = &mut ciphertext_buf[..kem.ciphertext_len()];
-                    self.symmetricstate
-                        .decrypt_and_mix_hash(&ptr[..read_len], ciphertext)
-                        .map_err(|_| Error::Decrypt)?;
+                    self.symmetricstate.decrypt_and_mix_hash(&ptr[..read_len], ciphertext)?;
                     let mut kem_output_buf = [0; MAXKEMSSLEN];
                     let kem_output = &mut kem_output_buf[..kem.shared_secret_len()];
                     kem.decapsulate(ciphertext, kem_output).map_err(|_| Error::Kem)?;
@@ -449,7 +441,7 @@ impl HandshakeState {
             }
         }
 
-        self.symmetricstate.decrypt_and_mix_hash(ptr, payload).map_err(|_| Error::Decrypt)?;
+        self.symmetricstate.decrypt_and_mix_hash(ptr, payload)?;
         if last {
             self.symmetricstate.split(&mut self.cipherstates.0, &mut self.cipherstates.1);
         }

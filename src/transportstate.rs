@@ -74,16 +74,15 @@ impl TransportState {
     /// Will result in `Error::Decrypt` if the contents couldn't be decrypted and/or the
     /// authentication tag didn't verify.
     ///
-    /// # Panics
-    ///
-    /// This function will panic if there is no key, or if there is a nonce overflow.
+    /// Will result in `StateProblem::Exhausted` if the max nonce overflows.
     pub fn read_message(&mut self, payload: &[u8], message: &mut [u8]) -> Result<usize, Error> {
         if self.initiator && self.pattern.is_oneway() {
             bail!(StateProblem::OneWay);
         }
         let cipher =
             if self.initiator { &mut self.cipherstates.1 } else { &mut self.cipherstates.0 };
-        cipher.decrypt(payload, message).map_err(|_| Error::Decrypt)
+        
+        cipher.decrypt(payload, message)
     }
 
     /// Generates a new key for the egress symmetric cipher according to Section 4.2

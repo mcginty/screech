@@ -4,6 +4,7 @@ use byteorder::{ByteOrder, LittleEndian};
 
 use super::CryptoResolver;
 use crate::{
+    Error,
     params::{CipherChoice, DHChoice, HashChoice},
     types::{Cipher, Dh, Hash, Random},
 };
@@ -108,7 +109,7 @@ impl Dh for SodiumDh25519 {
         &self.privkey[0..32]
     }
 
-    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), ()> {
+    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), Error> {
         let pubkey = sodium_curve25519::GroupElement::from_slice(&pubkey[0..32])
             .expect("Can't construct public key for Dh25519");
         let result = sodium_curve25519::scalarmult(&self.privkey, &pubkey);
@@ -118,7 +119,7 @@ impl Dh for SodiumDh25519 {
                 copy_slices!(buf.as_ref(), out);
                 Ok(())
             },
-            Err(_) => Err(()),
+            Err(_) => Err(Error::Dh),
         }
     }
 }
@@ -163,7 +164,7 @@ impl Cipher for SodiumChaChaPoly {
         authtext: &[u8],
         ciphertext: &[u8],
         out: &mut [u8],
-    ) -> Result<usize, ()> {
+    ) -> Result<usize, Error> {
         let mut nonce_bytes = [0u8; 12];
         LittleEndian::write_u64(&mut nonce_bytes[4..], nonce);
         let nonce = sodium_chacha20poly1305::Nonce(nonce_bytes);
@@ -175,7 +176,7 @@ impl Cipher for SodiumChaChaPoly {
                 copy_slices!(&buf, out);
                 Ok(buf.len())
             },
-            Err(_) => Err(()),
+            Err(_) => Err(Error::Decrypt),
         }
     }
 }

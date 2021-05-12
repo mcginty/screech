@@ -21,6 +21,7 @@ use crate::params::KemChoice;
 use crate::types::Kem;
 use crate::{
     constants::TAGLEN,
+    Error,
     params::{CipherChoice, DHChoice, HashChoice},
     types::{Cipher, Dh, Hash, Random},
 };
@@ -155,7 +156,7 @@ impl Dh for Dh25519 {
         &self.privkey
     }
 
-    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), ()> {
+    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), Error> {
         let result = x25519::x25519(self.privkey, pubkey[..32].try_into().unwrap());
         copy_slices!(&result, out);
         Ok(())
@@ -194,7 +195,7 @@ impl Cipher for CipherAesGcm {
         authtext: &[u8],
         ciphertext: &[u8],
         out: &mut [u8],
-    ) -> Result<usize, ()> {
+    ) -> Result<usize, Error> {
         let aead = aes_gcm::Aes256Gcm::new(&self.key.into());
 
         let mut nonce_bytes = [0u8; 12];
@@ -211,7 +212,7 @@ impl Cipher for CipherAesGcm {
             ciphertext[message_len..].into(),
         )
         .map(|_| message_len)
-        .map_err(|_| ())
+        .map_err(|_| Error::Decrypt)
     }
 }
 
@@ -245,7 +246,7 @@ impl Cipher for CipherChaChaPoly {
         authtext: &[u8],
         ciphertext: &[u8],
         out: &mut [u8],
-    ) -> Result<usize, ()> {
+    ) -> Result<usize, Error> {
         let mut nonce_bytes = [0u8; 12];
         copy_slices!(&nonce.to_le_bytes(), &mut nonce_bytes[4..]);
 
@@ -253,17 +254,15 @@ impl Cipher for CipherChaChaPoly {
 
         copy_slices!(ciphertext[..message_len], out);
 
-        let result = ChaCha20Poly1305::new(&self.key.into()).decrypt_in_place_detached(
+        ChaCha20Poly1305::new(&self.key.into()).decrypt_in_place_detached(
             &nonce_bytes.into(),
             authtext,
             &mut out[..message_len],
             ciphertext[message_len..].into(),
-        );
+        )
+        .map_err(|_| Error::Decrypt)?;
 
-        match result {
-            Ok(_) => Ok(message_len),
-            Err(_) => Err(()),
-        }
+        Ok(message_len)
     }
 }
 
@@ -298,7 +297,7 @@ impl Cipher for CipherXChaChaPoly {
         authtext: &[u8],
         ciphertext: &[u8],
         out: &mut [u8],
-    ) -> Result<usize, ()> {
+    ) -> Result<usize, Error> {
         let mut nonce_bytes = [0u8; 24];
         copy_slices!(&nonce.to_le_bytes(), &mut nonce_bytes[16..]);
 
@@ -306,17 +305,14 @@ impl Cipher for CipherXChaChaPoly {
 
         copy_slices!(ciphertext[..message_len], out);
 
-        let result = XChaCha20Poly1305::new(&self.key.into()).decrypt_in_place_detached(
+        XChaCha20Poly1305::new(&self.key.into()).decrypt_in_place_detached(
             &nonce_bytes.into(),
             authtext,
             &mut out[..message_len],
             ciphertext[message_len..].into(),
-        );
+        ).map_err(|_| Error::Decrypt)?;
 
-        match result {
-            Ok(_) => Ok(message_len),
-            Err(_) => Err(()),
-        }
+        Ok(message_len)
     }
 }
 

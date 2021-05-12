@@ -1,6 +1,6 @@
 //! The traits for cryptographic implementations that can be used by Noise.
 
-use crate::constants::{CIPHERKEYLEN, MAXBLOCKLEN, MAXHASHLEN, TAGLEN};
+use crate::{constants::{CIPHERKEYLEN, MAXBLOCKLEN, MAXHASHLEN, TAGLEN}, Error};
 use rand_core::{CryptoRng, RngCore};
 
 /// CSPRNG operations
@@ -30,7 +30,7 @@ pub trait Dh: Send + Sync {
     fn privkey(&self) -> &[u8];
 
     /// Calculate a Diffie-Hellman exchange.
-    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), ()>;
+    fn dh(&self, pubkey: &[u8], out: &mut [u8]) -> Result<(), Error>;
 }
 
 /// Cipher operations
@@ -51,7 +51,7 @@ pub trait Cipher: Send + Sync {
         authtext: &[u8],
         ciphertext: &[u8],
         out: &mut [u8],
-    ) -> Result<usize, ()>;
+    ) -> Result<usize, Error>;
 
     /// Rekey according to Section 4.2 of the Noise Specification, with a default
     /// implementation guaranteed to be secure for all ciphers.
