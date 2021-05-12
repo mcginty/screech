@@ -143,6 +143,16 @@ impl<'builder> Builder<'builder> {
         Ok(Keypair { private, public })
     }
 
+    /// Builds an asymmetric [`Keypair`] from a given secret key and specified dh algorithm.
+    pub fn build_keypair_from_secret_key(
+        &self,
+        secret_key: &'builder [u8],
+    ) -> Result<Keypair, Error> {
+        let mut s_dh = self.resolver.resolve_dh(&self.params.dh).ok_or(InitStage::GetDhImpl)?;
+        s_dh.set(secret_key);
+        Ok(Keypair { private: secret_key.to_vec(), public: s_dh.pubkey().to_vec() })
+    }
+
     /// Build a [`HandshakeState`] for the side who will initiate the handshake (send the first message)
     pub fn build_initiator(self) -> Result<HandshakeState, Error> {
         self.build(true)
@@ -273,6 +283,21 @@ mod tests {
         let key1 = builder.generate_keypair();
         let key2 = builder.generate_keypair();
         assert!(key1.unwrap() != key2.unwrap());
+    }
+
+    #[test]
+    fn test_deterministic_keybuild() {
+        let public_key = [
+            21, 50, 22, 157, 231, 160, 237, 11, 91, 131, 166, 162, 185, 55, 24, 125, 138, 176, 99,
+            166, 20, 161, 157, 57, 177, 241, 215, 0, 51, 13, 150, 31,
+        ];
+        let secret_key = [
+            83, 75, 77, 152, 164, 249, 65, 65, 239, 36, 159, 145, 250, 29, 58, 215, 250, 9, 55,
+            243, 134, 157, 198, 189, 182, 21, 182, 36, 34, 4, 125, 122,
+        ];
+        let builder = Builder::new("Noise_NX_25519_AESGCM_BLAKE2s".parse().unwrap());
+        let keypair = builder.build_keypair_from_secret_key(&secret_key).unwrap();
+        assert_eq!(&keypair.public, &public_key);
     }
 
     #[test]
