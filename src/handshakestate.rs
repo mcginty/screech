@@ -195,9 +195,9 @@ impl HandshakeState {
     }
 
     /// Construct a message from `payload` (and pending handshake tokens if in handshake state),
-    /// and writes it to the `message` buffer.
+    /// and write it to the `message` buffer.
     ///
-    /// Returns the size of the written payload.
+    /// Returns the number of bytes written to `message`.
     ///
     /// # Errors
     ///
@@ -320,9 +320,9 @@ impl HandshakeState {
         Ok(byte_index)
     }
 
-    /// Reads a noise message from `input`
+    /// Read a noise message from `message` and write the payload to the `payload` buffer.
     ///
-    /// Returns the size of the payload written to `payload`.
+    /// Returns the number of bytes written to `payload`.
     ///
     /// # Errors
     ///

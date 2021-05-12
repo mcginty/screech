@@ -45,9 +45,9 @@ impl TransportState {
     }
 
     /// Construct a message from `payload` (and pending handshake tokens if in handshake state),
-    /// and writes it to the `output` buffer.
+    /// and write it to the `message` buffer.
     ///
-    /// Returns the size of the written payload.
+    /// Returns the number of bytes written to `message`.
     ///
     /// # Errors
     ///
@@ -65,9 +65,9 @@ impl TransportState {
         Ok(cipher.encrypt(payload, message)?)
     }
 
-    /// Reads a noise message from `input`
+    /// Read a noise message from `message` and write the payload to the `payload` buffer.
     ///
-    /// Returns the size of the payload written to `payload`.
+    /// Returns the number of bytes written to `payload`.
     ///
     /// # Errors
     ///
@@ -77,16 +77,16 @@ impl TransportState {
     /// # Panics
     ///
     /// This function will panic if there is no key, or if there is a nonce overflow.
-    pub fn read_message(&mut self, payload: &[u8], message: &mut [u8]) -> Result<usize, Error> {
+    pub fn read_message(&mut self, message: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
         if self.initiator && self.pattern.is_oneway() {
             bail!(StateProblem::OneWay);
         }
         let cipher =
             if self.initiator { &mut self.cipherstates.1 } else { &mut self.cipherstates.0 };
-        cipher.decrypt(payload, message).map_err(|_| Error::Decrypt)
+        cipher.decrypt(message, payload).map_err(|_| Error::Decrypt)
     }
 
-    /// Generates a new key for the egress symmetric cipher according to Section 4.2
+    /// Generate a new key for the egress symmetric cipher according to Section 4.2
     /// of the Noise Specification. Synchronizing timing of rekey between initiator and
     /// responder is the responsibility of the application, as described in Section 11.3
     /// of the Noise Specification.
@@ -98,7 +98,7 @@ impl TransportState {
         }
     }
 
-    /// Generates a new key for the ingress symmetric cipher according to Section 4.2
+    /// Generate a new key for the ingress symmetric cipher according to Section 4.2
     /// of the Noise Specification. Synchronizing timing of rekey between initiator and
     /// responder is the responsibility of the application, as described in Section 11.3
     /// of the Noise Specification.
@@ -130,7 +130,7 @@ impl TransportState {
         self.cipherstates.rekey_responder_manually(key)
     }
 
-    /// Sets the *receiving* CipherState's nonce. Useful for using noise on lossy transports.
+    /// Set the forthcoming *inbound* nonce value. Useful for using noise on lossy transports.
     pub fn set_receiving_nonce(&mut self, nonce: u64) {
         if self.initiator {
             self.cipherstates.1.set_nonce(nonce);
