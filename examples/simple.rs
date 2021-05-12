@@ -2,7 +2,7 @@
     not(any(feature = "default-resolver", feature = "ring-accelerated",)),
     allow(dead_code, unused_extern_crates, unused_imports)
 )]
-//! This is a barebones TCP Client/Server that establishes a `Noise_NN` session, and sends
+//! This is a barebones TCP Client/Server that establishes a `Noise_XX` session, and sends
 //! an important message across the wire.
 //!
 //! # Usage
