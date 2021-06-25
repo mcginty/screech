@@ -77,13 +77,13 @@ impl TransportState {
     /// # Panics
     ///
     /// This function will panic if there is no key, or if there is a nonce overflow.
-    pub fn read_message(&mut self, payload: &[u8], message: &mut [u8]) -> Result<usize, Error> {
+    pub fn read_message(&mut self, message: &[u8], payload: &mut [u8]) -> Result<usize, Error> {
         if self.initiator && self.pattern.is_oneway() {
             bail!(StateProblem::OneWay);
         }
         let cipher =
             if self.initiator { &mut self.cipherstates.1 } else { &mut self.cipherstates.0 };
-        cipher.decrypt(payload, message).map_err(|_| Error::Decrypt)
+        cipher.decrypt(message, payload).map_err(|_| Error::Decrypt)
     }
 
     /// Generates a new key for the egress symmetric cipher according to Section 4.2
